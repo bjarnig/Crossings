@@ -1,0 +1,49 @@
+class:: WsGen
+summary:: Waveset synthesis with per-waveset parameters
+categories:: UGens>Generators>Deterministic
+
+description::
+Generates a stream of wavesets. Each waveset is a positive half-cycle followed by a negative one. Length, peak, shape and the position of the middle zero crossing are read once at the start of each waveset, so demand-rate inputs such as link::Classes/Dbrown:: or link::Classes/Dseq:: advance one value per waveset.
+
+classmethods::
+
+method:: ar
+
+argument:: freq
+Frequency of the waveset (1 / its length) in Hz.
+
+argument:: amp
+Peak amplitude of the waveset.
+
+argument:: shape
+Half-cycle shape: 0 sine, 1 triangle, 2 square, 3 spike. Fractional values morph between neighbours. The square has hard edges at the zero crossings and aliases.
+
+argument:: skew
+Position of the middle zero crossing, 0.01 to 0.99. 0.5 gives equal half-cycles.
+
+argument:: repeats
+How many times each waveset is played before new values are read.
+
+argument:: mul
+
+argument:: add
+
+examples::
+
+code::
+// a random walk of waveset lengths
+{ WsGen.ar(Dbrown(80, 900, 40), 0.3, 0) ! 2 }.play;
+::
+
+code::
+// shape, skew and amplitude drawn per waveset, each waveset repeated
+{
+	WsGen.ar(
+		Dseq([110, 220, 165, 330], inf),
+		Dwhite(0.1, 0.4),
+		Dwhite(0, 3),
+		Dbrown(0.1, 0.9, 0.05),
+		Dseq([8, 4, 16], inf)
+	) ! 2
+}.play;
+::
