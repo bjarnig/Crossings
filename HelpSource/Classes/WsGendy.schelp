@@ -1,0 +1,134 @@
+class:: WsGendy
+summary:: Dynamic stochastic synthesis bounded by zero crossings
+related:: Classes/WsGen, Classes/WsMap, Classes/Gendy1
+categories:: UGens>Generators>Stochastic
+
+description::
+A waveset version of Xenakis' dynamic stochastic synthesis. Each half-cycle is a curve through code::knum:: breakpoints between two zero crossings. Once per waveset every breakpoint takes a random step, and the waveset length takes a random step in octaves. Steps fold back at their limits, so the shape drifts from one waveset to the next while every waveset keeps exactly two zero crossings.
+
+The positive and the negative half-cycle have their own breakpoints. All inputs are read once per waveset, so demand-rate inputs advance one value per waveset.
+
+classmethods::
+
+method:: ar
+
+argument:: minFreq
+Lowest waveset frequency in Hz.
+
+argument:: maxFreq
+Highest waveset frequency in Hz.
+
+argument:: freqStep
+Largest random step of the waveset frequency, in octaves.
+
+argument:: ampStep
+Largest random step of each breakpoint, as a fraction of the peak.
+
+argument:: knum
+Number of breakpoints in each half-cycle, 1 to 16.
+
+argument:: amp
+Peak amplitude.
+
+argument:: skew
+Position of the middle zero crossing, 0.01 to 0.99.
+
+argument:: interp
+Interpolation between breakpoints, 0 linear to 1 cosine. Cosine is smoother and aliases less.
+
+argument:: mul
+
+argument:: add
+
+examples::
+
+code::
+{ WsGendy.ar(80, 800, 0.2, 0.1) * 0.5 ! 2 }.play;
+::
+
+code::
+{ WsGendy.ar(200, 210, 0.01, MouseX.kr(0, 0.5)) * 0.5 ! 2 }.play;
+::
+
+code::
+{ WsGendy.ar(MouseX.kr(20, 2000, 1), MouseX.kr(20, 2000, 1) * 1.1, MouseY.kr(0, 1), 0.05) * 0.5 ! 2 }.play;
+::
+
+code::
+{ WsGendy.ar(100, 100, 0, 0.02, MouseX.kr(1, 16)) * 0.5 ! 2 }.play;
+::
+
+code::
+{ WsGendy.ar(150, 150, 0, 0.1, 12, 0.5, 0.5, MouseX.kr(0, 1)) ! 2 }.play;
+::
+
+code::
+{ WsGendy.ar(60, 6000, 1, 0.3, 4, 0.4, Dwhite(0.05, 0.95)) ! 2 }.play;
+::
+
+code::
+{ WsGendy.ar(30, 90, 0.05, 0.02, 16, 0.5, MouseX.kr(0.05, 0.95), 1) ! 2 }.play;
+::
+
+code::
+{ WsGendy.ar(Dseq([55, 110, 220, 440], inf), Dseq([60, 120, 240, 480], inf), 0.1, 0.05, 6, 0.4) ! 2 }.play;
+::
+
+code::
+(
+{
+	var step = Dstutter(Dwhite(20, 300), Dseq([0, 0.01, 0.05, 0.3], inf));
+	WsGendy.ar(100, 900, step, step, 8, 0.4, 0.5, 1) ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var knum = Dstutter(Dwhite(5, 80), Dwhite(1, 16));
+	WsGendy.ar(70, 140, 0.02, 0.08, knum, 0.4, Dbrown(0.2, 0.8, 0.02)) ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	Splay.ar(Array.fill(6, { |i|
+		WsGendy.ar(40 * (i + 1), 44 * (i + 1), 0.01, 0.04, 3 + i, 0.15, 0.5, 1)
+	}))
+}.play;
+)
+::
+
+code::
+(
+{
+	Splay.ar(Array.fill(8, {
+		var f = exprand(50, 400);
+		WsGendy.ar(f, f * 1.02, 0.005, LFNoise1.kr(0.2).range(0, 0.15), rrand(2, 12), 0.1, 0.5, 1)
+	}))
+}.play;
+)
+::
+
+code::
+(
+{
+	var src = WsGendy.ar(20, 200, 0.4, 0.2, 5, 0.6, LFNoise2.kr(0.5).range(0.1, 0.9));
+	LeakDC.ar(RLPF.ar(src, LFNoise1.kr(0.4).exprange(100, 4000), 0.2)) ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var trig = Dust.kr(3);
+	var amp = Decay2.kr(trig, 0.005, TRand.kr(0.05, 0.6, trig));
+	var f = TExpRand.kr(40, 1500, trig);
+	WsGendy.ar(f, f * 1.5, 0.3, 0.2, TIRand.kr(2, 10, trig), amp * 0.5) ! 2
+}.play;
+)
+::
