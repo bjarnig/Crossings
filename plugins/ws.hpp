@@ -151,3 +151,45 @@ static inline double backlash(double rEff, double r, double h) {
     h = std::fabs(h);
     return clampd(rEff, r - h, r + h);
 }
+
+// Streaming waveset detector for live input. A waveset ends at a rising zero crossing, but
+// only once the signal has gone below -thresh since the last one (a Schmitt trigger, so
+// noise around zero does not split wavesets). Crossing times are interpolated.
+struct WsDetect {
+    double prevX = 0.0;
+    double t = 0.0; // samples since start
+    double start = -1.0; // last counted rising crossing; negative before the first
+    double fall = -1.0; // first falling crossing after start
+    double peak = 0.0;
+    bool armed = false;
+    double len = 0.0, skew = 0.5, lastPeak = 0.0; // the last completed waveset
+};
+
+// Returns true when a waveset completes at this sample.
+static inline bool detect(WsDetect& d, double x, double thresh) {
+    bool done = false;
+    double prev = d.prevX;
+    if (x < -std::fabs(thresh))
+        d.armed = true;
+    if (d.start >= 0.0 && d.fall < 0.0 && prev > 0.0 && x <= 0.0)
+        d.fall = d.t - 1.0 + prev / (prev - x);
+    if (d.armed && prev <= 0.0 && x > 0.0) {
+        double tc = d.t - 1.0 + -prev / (x - prev);
+        if (d.start >= 0.0) {
+            d.len = tc - d.start;
+            d.skew = d.fall >= 0.0 ? (d.fall - d.start) / d.len : 0.5;
+            d.lastPeak = d.peak;
+            done = true;
+        }
+        d.start = tc;
+        d.fall = -1.0;
+        d.peak = 0.0;
+        d.armed = false;
+    }
+    double a = std::fabs(x);
+    if (a > d.peak)
+        d.peak = a;
+    d.prevX = x;
+    d.t += 1.0;
+    return done;
+}

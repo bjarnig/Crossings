@@ -1,0 +1,124 @@
+class:: WsSync
+summary:: Synthetic wavesets on the zero crossings of a live input
+related:: Classes/WsInfo, Classes/WsGen
+categories:: UGens>Generators>Deterministic
+
+description::
+Takes the timing of a live input and fills it with synthetic wavesets. Each input waveset's length is measured when it ends and replayed as code::count:: generated wavesets of the same total length, so the output keeps the input's rhythm of zero crossings exactly. Its skew and peak can be carried over too.
+
+The length of a waveset is only known once it has ended, so the output runs one waveset behind. When the input produces a waveset longer than any before, the output waits for it, so the delay settles at about the longest waveset so far (5 ms for 200 Hz material). Silence or noise below code::thresh:: produces no wavesets, and the output falls silent once it has played what it has.
+
+All inputs except code::in:: and code::thresh:: are read once per input waveset, so demand-rate inputs advance one value per input waveset.
+
+classmethods::
+
+method:: ar
+
+argument:: in
+The signal whose zero crossings set the timing.
+
+argument:: amp
+Peak amplitude.
+
+argument:: shape
+Half-cycle shape: 0 sine, 1 triangle, 2 square, 3 spike. Fractional values morph between neighbours.
+
+argument:: skew
+Position of the middle zero crossing, 0.01 to 0.99.
+
+argument:: count
+Generated wavesets per input waveset. 2 doubles the frequency while keeping the input's timing.
+
+argument:: skewFollow
+Blend from code::skew:: (0) to the input waveset's own skew (1).
+
+argument:: ampFollow
+Blend from a fixed peak (0) to the input waveset's peak scaled by code::amp:: (1).
+
+argument:: thresh
+Amplitude the input must fall below before the next rising crossing counts, see link::Classes/WsInfo::. Not read at demand rate.
+
+argument:: balance
+Scales the larger half-cycle so both halves enclose the same area, 0 to 1.
+
+argument:: mul
+
+argument:: add
+
+method:: arTrig
+Same as link::#*ar:: with one more argument, and returns code::[sig, trig]::, with a trigger at the start of every code::every::-th generated waveset.
+
+argument:: every
+Generated wavesets between triggers. Read each time the trigger fires.
+
+examples::
+
+code::
+b = Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav");
+::
+
+code::
+{ WsSync.ar(PlayBuf.ar(1, b, BufRateScale.kr(b), loop: 1), 0.9, 0, 0.5, 1, 1, 1, 0.01) ! 2 }.play;
+::
+
+code::
+{ WsSync.ar(PlayBuf.ar(1, b, BufRateScale.kr(b), loop: 1), 0.9, MouseX.kr(0, 3), 0.5, 1, MouseY.kr(0, 1), 1, 0.01) ! 2 }.play;
+::
+
+code::
+{ WsSync.ar(PlayBuf.ar(1, b, BufRateScale.kr(b), loop: 1), 0.9, 1, 0.5, MouseX.kr(1, 6), 1, 1, 0.01) ! 2 }.play;
+::
+
+code::
+{ WsSync.ar(PlayBuf.ar(1, b, BufRateScale.kr(b), loop: 1), 0.9, 0, 0.5, 1, 1, 1, MouseX.kr(0, 0.3)) ! 2 }.play;
+::
+
+code::
+(
+{
+	var v = PlayBuf.ar(1, b, BufRateScale.kr(b), loop: 1);
+	[v * 0.5, WsSync.ar(v, 0.9, 3, 0.5, 1, 0, 1, 0.01, 1)]
+}.play;
+)
+::
+
+code::
+(
+{
+	var v = PlayBuf.ar(1, b, BufRateScale.kr(b), loop: 1);
+	WsSync.ar(v, 0.9, Dseq([0, 1, 2, 3], inf), Dwhite(0.1, 0.9), Dseq([1, 1, 2, 4], inf), 0, 1, 0.01, 1) ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var v = PlayBuf.ar(1, b, BufRateScale.kr(b) * 0.5, loop: 1);
+	var sig, trig;
+	#sig, trig = WsSync.arTrig(v, 0.9, 1, 0.5, 1, 1, 1, 0.01, every: 24);
+	Pan2.ar(sig, TRand.ar(-1, 1, trig))
+}.play;
+)
+::
+
+code::
+{ WsSync.ar(WsMap.ar(MouseX.kr(0.7, 1), 60, 1200, 0.3), 0.3, 3, 0.5, 2, 1) ! 2 }.play;
+::
+
+code::
+{ WsSync.ar(WsGendy.ar(80, 400, 0.2, 0.1), 0.3, Dwhite(0, 3), 0.5, Dwhite(1, 4), 1) ! 2 }.play;
+::
+
+code::
+(
+{
+	var v = PlayBuf.ar(1, b, BufRateScale.kr(b), loop: 1);
+	Splay.ar(Array.fill(3, { |i| WsSync.ar(v, 0.9, i, 0.5, i + 1, 1, 1, 0.01, 1) }))
+}.play;
+)
+::
+
+code::
+{ WsSync.ar(SoundIn.ar(0), 0.9, 1, 0.5, 1, 1, 1, 0.02) ! 2 }.play;
+::

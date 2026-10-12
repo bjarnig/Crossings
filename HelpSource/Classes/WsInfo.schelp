@@ -1,0 +1,99 @@
+class:: WsInfo
+summary:: Measures each waveset of a live input
+related:: Classes/WsSync, Classes/WsGen, Classes/ZeroCrossing
+categories:: UGens>Analysis
+
+description::
+Follows the zero crossings of an input and measures each waveset as it ends. A waveset ends at a rising zero crossing, timed to a fraction of a sample. Returns code::[freq, peak, skew, trig]::: the frequency (1 / length) of the last complete waveset, its peak, its skew (the fraction before its falling crossing) and a trigger when it ends. The values hold until the next waveset ends. Before the first waveset ends, code::freq:: is 0, so clip it (code::.max(20)::) before using it as the frequency of a UGen that reads it once per waveset, such as link::Classes/WsGen::.
+
+code::thresh:: works as a Schmitt trigger: a rising crossing only counts after the signal has gone below code::-thresh::, so low-level noise around zero does not split wavesets.
+
+At a kink, where the half-cycles on either side of a crossing have different slopes, the interpolated length can be off by up to about one sample.
+
+classmethods::
+
+method:: ar, kr
+
+argument:: in
+The signal to measure.
+
+argument:: thresh
+Amplitude the signal must fall below before the next rising crossing counts. 0 counts every crossing. Not read at demand rate.
+
+examples::
+
+code::
+b = Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav");
+::
+
+code::
+(
+{
+	var v = PlayBuf.ar(1, b, BufRateScale.kr(b), loop: 1);
+	var info = WsInfo.kr(v, 0.01);
+	[v * 0.5, SinOsc.ar(info[0].lag(0.01).clip(20, 8000), 0, info[1].lag(0.02) * 0.5)]
+}.play;
+)
+::
+
+code::
+(
+{
+	var v = PlayBuf.ar(1, b, BufRateScale.kr(b), loop: 1);
+	var freq, peak, skew, trig;
+	#freq, peak, skew, trig = WsInfo.ar(v, 0.01);
+	Pan2.ar(Ringz.ar(trig, freq.clip(50, 6000), 0.02, 0.04), skew * 2 - 1)
+}.play;
+)
+::
+
+code::
+(
+{
+	var v = PlayBuf.ar(1, b, BufRateScale.kr(b), loop: 1);
+	var info = WsInfo.ar(v, MouseX.kr(0, 0.2));
+	WsGen.ar(info[0].max(20) * 0.5, info[1] * 0.8, 1, info[2]) ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var v = PlayBuf.ar(1, b, BufRateScale.kr(b), loop: 1);
+	var info = WsInfo.kr(v, 0.02);
+	LeakDC.ar(RLPF.ar(Saw.ar(info[0].lag(0.05).clip(30, 2000) * [1, 1.01], 0.2), info[0].lag(0.3).clip(200, 6000), 0.3))
+}.play;
+)
+::
+
+code::
+(
+{
+	var src = WsMap.ar(MouseX.kr(0.7, 1), 60, 1200, 0.3);
+	var info = WsInfo.kr(src);
+	[src, SinOsc.ar(info[0].lag(0.1) * 0.5, 0, 0.2)]
+}.play;
+)
+::
+
+code::
+(
+{
+	var v = PlayBuf.ar(1, b, BufRateScale.kr(b), loop: 1);
+	var trig = WsInfo.ar(v, 0.01)[3];
+	var div = PulseDivider.ar(trig, 16);
+	WhiteNoise.ar(Decay2.ar(div, 0.001, 0.02).clip(0, 1) * 0.3) ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var in = SoundIn.ar(0);
+	var info = WsInfo.kr(in, 0.02);
+	WsGen.ar(info[0].max(20).lag(0.005) * 2, info[1] * 0.5, 3, info[2]) ! 2
+}.play;
+)
+::

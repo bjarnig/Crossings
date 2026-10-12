@@ -1,0 +1,118 @@
+class:: WsGroup
+summary:: Wavesets made of any number of half-cycles
+related:: Classes/WsGen, Classes/WsMap
+categories:: UGens>Generators>Deterministic
+
+description::
+Generates groups of half-cycles in place of wavesets of two. Within a group the signs alternate, and each group starts positive again, so an odd number of half-cycles puts two of the same sign next to each other at the boundary. The group repeats at code::freq::, which becomes the fundamental, while the half-cycles inside it set the partials: 3 half-cycles at 100 Hz give a 100 Hz tone built from 150 Hz half-cycles.
+
+With code::halves:: 2 it is the same as link::Classes/WsGen::. code::tilt:: makes the half-cycles unequal in length, code::decay:: lowers each successive one, and code::flip:: inverts signs at random. All inputs are read once per group, so demand-rate inputs advance one value per group.
+
+classmethods::
+
+method:: ar
+
+argument:: freq
+Frequency of the group (1 / its length) in Hz.
+
+argument:: amp
+Peak amplitude.
+
+argument:: shape
+Half-cycle shape: 0 sine, 1 triangle, 2 square, 3 spike. Fractional values morph between neighbours.
+
+argument:: halves
+Number of half-cycles in the group, 1 to 64.
+
+argument:: tilt
+Spread of half-cycle lengths within the group. The last half-cycle is 2^(2 * tilt) times the first: 1 makes it four times as long, -1 a quarter. 0 keeps them equal.
+
+argument:: decay
+Level drop from one half-cycle to the next, 0 to 1. Each half-cycle is code::1 - decay:: times the one before it.
+
+argument:: flip
+Probability, 0 to 1, that each half-cycle's sign is inverted. Runs of equal sign shift energy towards low frequencies and DC.
+
+argument:: balance
+Scales the larger side so positive and negative half-cycles enclose the same area, 0 to 1. Odd counts, tilt, decay and flip all produce DC without it.
+
+argument:: mul
+
+argument:: add
+
+method:: arTrig
+Same as link::#*ar:: with one more argument, and returns code::[sig, trig]::, with a trigger at the start of every code::every::-th group.
+
+argument:: every
+Groups between triggers. Read each time the trigger fires.
+
+examples::
+
+code::
+{ WsGroup.ar(110, 0.3, 0, MouseX.kr(1, 12).round, balance: 1) ! 2 }.play;
+::
+
+code::
+{ WsGroup.ar(80, 0.3, 0, 7, MouseX.kr(-1.5, 1.5), balance: 1) ! 2 }.play;
+::
+
+code::
+{ WsGroup.ar(60, 0.3, 1, 16, 0, MouseX.kr(0, 0.3), balance: 1) ! 2 }.play;
+::
+
+code::
+{ WsGroup.ar(100, 0.3, 0, 8, 0, 0, MouseX.kr(0, 0.5), MouseY.kr(0, 1)) ! 2 }.play;
+::
+
+code::
+{ WsGroup.ar(55, 0.3, MouseX.kr(0, 3), Dseq([2, 3, 5, 7, 11], inf), 0, 0, 0, 1) ! 2 }.play;
+::
+
+code::
+{ WsGroup.ar(Dbrown(40, 300, 20), 0.3, Dwhite(0, 3), Dwhite(1, 12), Dwhite(-1, 1), Dwhite(0, 0.3), 0, 1) ! 2 }.play;
+::
+
+code::
+(
+{
+	WsGroup.ar(
+		Dseq([Dseries(50, 5, 40), Dseries(250, -5, 40)], inf),
+		0.3,
+		Dstutter(40, Dseq([0, 1, 3], inf)),
+		Dstutter(8, Dseq([3, 5, 9, 17], inf)),
+		Dbrown(-1, 1, 0.1),
+		0.05,
+		0,
+		1
+	) ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var sig, trig;
+	#sig, trig = WsGroup.arTrig(Dbrown(30, 120, 5), 0.3, 1, Dwhite(3, 9), 0, 0.1, 0, 1, Dseq([4, 6, 8], inf));
+	sig + Ringz.ar(trig, TExpRand.ar(800, 3000, trig), 0.05, 0.08) ! 2
+}.play;
+)
+::
+
+code::
+{ WsGroup.ar(Dmap(MouseX.kr(0.7, 1)) * 200 + 40, 0.3, 0, Dmap(0.9, 5) * 10 + 2, Dmap(0.9, 5, 0.3, 1) * 2 - 1, 0, 0, 1) ! 2 }.play;
+::
+
+code::
+(
+{
+	Splay.ar(Array.fill(4, { |i|
+		WsGroup.ar(55 * (i + 1), 0.2, i % 4, [2, 3, 5, 7][i], LFNoise1.kr(0.1).range(-1, 1), 0, 0, 1)
+	}))
+}.play;
+)
+::
+
+code::
+{ LeakDC.ar(WsGroup.ar(40, 0.3, 2, 24, 0, 0.08, 0.15)) * 0.8 ! 2 }.play;
+::
