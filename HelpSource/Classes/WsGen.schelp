@@ -28,11 +28,18 @@ How many times each waveset is played before new values are read.
 argument:: glide
 How far into each waveset the move from the previous values to the new ones takes, 0 to 1. 0 jumps at the zero crossing; 1 glides across the whole waveset. Repeated wavesets hold.
 
+argument:: balance
+Scales down the larger half-cycle so both halves enclose the same area, which removes the DC offset that skew and uneven halves produce, 0 (off) to 1 (equal area). Zero crossings and the peak stay where they are; the level drops as the halves become more uneven.
+
 argument:: mul
 
 argument:: add
 
 examples::
+
+code::
+{ WsGen.ar(Dbrown(60, 300, 20), 0.4, 0, MouseX.kr(0.05, 0.95), 1, 0, MouseY.kr(0, 1)) ! 2 }.play;
+::
 
 code::
 { WsGen.ar(Dbrown(80, 900, 40), 0.3) ! 2 }.play;

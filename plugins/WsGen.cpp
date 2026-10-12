@@ -6,14 +6,14 @@
 
 static InterfaceTable* ft;
 
-enum { kFreq, kAmp, kShape, kSkew, kRepeats, kGlide };
+enum { kFreq, kAmp, kShape, kSkew, kRepeats, kGlide, kBalance };
 
 struct WsGen : public Unit {
     double phase; // 0..1 across the current waveset
     // waveset parameters: p* where the waveset started from, c* where it is heading
     double pFreq, pAmp, pShape, pSkew;
     double cFreq, cAmp, cShape, cSkew;
-    float glide;
+    float glide, balance;
     int repLeft;
     bool started;
 };
@@ -29,6 +29,7 @@ void WsGen_Ctor(WsGen* unit) {
     unit->pShape = unit->cShape = 0.0;
     unit->pSkew = unit->cSkew = 0.5;
     unit->glide = 0.f;
+    unit->balance = 0.f;
     unit->repLeft = 0;
     unit->started = false;
     OUT0(0) = 0.f;
@@ -52,6 +53,7 @@ void WsGen_next(WsGen* unit, int inNumSamples) {
                 unit->cShape = pull(unit, kShape, i + 1, (float)unit->cShape);
                 unit->cSkew = pull(unit, kSkew, i + 1, (float)unit->cSkew);
                 unit->glide = pull(unit, kGlide, i + 1, unit->glide);
+                unit->balance = pull(unit, kBalance, i + 1, unit->balance);
                 float reps = pull(unit, kRepeats, i + 1, 1.f);
                 unit->repLeft = reps < 1.f ? 1 : (int)reps;
                 if (!unit->started) {
@@ -75,7 +77,10 @@ void WsGen_next(WsGen* unit, int inNumSamples) {
         double shape = unit->pShape + t * (unit->cShape - unit->pShape);
         double s = clampd(unit->pSkew + t * (unit->cSkew - unit->pSkew), 0.01, 0.99);
 
-        double y = phase < s ? halfCycle(shape, phase / s) : -halfCycle(shape, (phase - s) / (1.0 - s));
+        // both halves share the shape, so their areas are proportional to their lengths
+        double gPos, gNeg;
+        balanceGains(s, 1.0 - s, unit->balance, gPos, gNeg);
+        double y = phase < s ? gPos * halfCycle(shape, phase / s) : -gNeg * halfCycle(shape, (phase - s) / (1.0 - s));
         out[i] = zapgremlins((float)(y * amp));
         phase += incFor(freq, sr);
     }

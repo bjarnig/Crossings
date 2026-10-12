@@ -47,11 +47,18 @@ How strongly x lowers the peak, 0 to 1. At 1 the shortest wavesets are the quiet
 argument:: init
 Starting value of x, 0 to 1. Read once when the synth starts.
 
+argument:: balance
+Scales down the larger half-cycle so both halves enclose the same area, which removes the DC offset that skew and uneven halves produce, 0 (off) to 1 (equal area). Zero crossings and the peak stay where they are; the level drops as the halves become more uneven.
+
 argument:: mul
 
 argument:: add
 
 examples::
+
+code::
+{ WsMap.ar(1, 40, 4000, 0.4, 0, 0, MouseX.kr(0, 4), 0.5, balance: MouseY.kr(0, 1)) ! 2 }.play;
+::
 
 code::
 { WsMap.ar(MouseX.kr(0.7, 1), 60, 1200, 0.3) ! 2 }.play;

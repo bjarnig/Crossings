@@ -5,14 +5,15 @@
 
 static InterfaceTable* ft;
 
-enum { kMinFreq, kMaxFreq, kFreqStep, kAmpStep, kKnum, kAmp, kSkew, kInterp };
+enum { kMinFreq, kMaxFreq, kFreqStep, kAmpStep, kKnum, kAmp, kSkew, kInterp, kBalance };
 
 static const int kMaxPts = 16;
 
 struct WsGendy : public Unit {
     double phase, inc;
     double oct; // log2 of the current frequency
-    float minFreq, maxFreq, freqStep, ampStep, knum, amp, skew, interp;
+    float minFreq, maxFreq, freqStep, ampStep, knum, amp, skew, interp, balance;
+    double gPos, gNeg;
     double pos[kMaxPts], neg[kMaxPts];
     int n;
 };
@@ -51,6 +52,8 @@ void WsGendy_Ctor(WsGendy* unit) {
     unit->amp = 0.f;
     unit->skew = 0.5f;
     unit->interp = 0.f;
+    unit->balance = 0.f;
+    unit->gPos = unit->gNeg = 1.0;
     unit->n = 8;
     OUT0(0) = 0.f;
 }
@@ -73,6 +76,7 @@ void WsGendy_next(WsGendy* unit, int inNumSamples) {
             unit->amp = pull(unit, kAmp, i + 1, unit->amp);
             unit->skew = pull(unit, kSkew, i + 1, unit->skew);
             unit->interp = pull(unit, kInterp, i + 1, unit->interp);
+            unit->balance = pull(unit, kBalance, i + 1, unit->balance);
 
             unit->n = (int)clampd(unit->knum, 1.0, kMaxPts);
             double st = std::fabs(unit->ampStep);
@@ -86,14 +90,24 @@ void WsGendy_next(WsGendy* unit, int inNumSamples) {
                 std::swap(lo, hi);
             unit->oct = mirror(unit->oct + std::fabs(unit->freqStep) * rgen.frand2(), lo, hi);
             inc = incFor(std::exp2(unit->oct), sr);
+
+            // the area under a linear or cosine segment is its mean height, so each half's area is
+            // its length times the mean of its breakpoints
+            double sumPos = 0.0, sumNeg = 0.0;
+            for (int k = 0; k < unit->n; ++k) {
+                sumPos += unit->pos[k];
+                sumNeg += unit->neg[k];
+            }
+            double sk = clampd(unit->skew, 0.01, 0.99);
+            balanceGains(sk * sumPos, (1.0 - sk) * sumNeg, unit->balance, unit->gPos, unit->gNeg);
             if (phase >= 1.0)
                 phase = 0.0;
         }
 
         double s = clampd(unit->skew, 0.01, 0.99);
         double it = clampd(unit->interp, 0.0, 1.0);
-        double y = phase < s ? curve(unit->pos, unit->n, phase / s, it)
-                             : -curve(unit->neg, unit->n, (phase - s) / (1.0 - s), it);
+        double y = phase < s ? unit->gPos * curve(unit->pos, unit->n, phase / s, it)
+                             : -unit->gNeg * curve(unit->neg, unit->n, (phase - s) / (1.0 - s), it);
         out[i] = zapgremlins((float)(y * unit->amp));
         phase += inc;
     }

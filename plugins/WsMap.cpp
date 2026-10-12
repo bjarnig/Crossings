@@ -6,13 +6,13 @@
 
 static InterfaceTable* ft;
 
-enum { kR, kLo, kHi, kAmp, kShape, kMap, kSkewDepth, kAmpDepth, kInit };
+enum { kR, kLo, kHi, kAmp, kShape, kMap, kSkewDepth, kAmpDepth, kInit, kBalance };
 
 struct WsMap : public Unit {
     double phase, inc;
     double x, prev;
-    float r, lo, hi, amp, shape, map, skewDepth, ampDepth;
-    double peak, skew;
+    float r, lo, hi, amp, shape, map, skewDepth, ampDepth, balance;
+    double peak, skew, gPos, gNeg;
 };
 
 static void WsMap_next(WsMap* unit, int inNumSamples);
@@ -48,6 +48,8 @@ void WsMap_Ctor(WsMap* unit) {
     unit->map = 0.f;
     unit->skewDepth = 0.f;
     unit->ampDepth = 0.f;
+    unit->balance = 0.f;
+    unit->gPos = unit->gNeg = 1.0;
     unit->peak = 0.0;
     unit->skew = 0.5;
     OUT0(0) = 0.f;
@@ -70,6 +72,7 @@ void WsMap_next(WsMap* unit, int inNumSamples) {
             unit->map = pull(unit, kMap, i + 1, unit->map);
             unit->skewDepth = pull(unit, kSkewDepth, i + 1, unit->skewDepth);
             unit->ampDepth = pull(unit, kAmpDepth, i + 1, unit->ampDepth);
+            unit->balance = pull(unit, kBalance, i + 1, unit->balance);
 
             unit->prev = unit->x;
             int m = (int)clampd(unit->map, 0.0, 3.0);
@@ -81,12 +84,14 @@ void WsMap_next(WsMap* unit, int inNumSamples) {
             inc = incFor(lo * std::pow(hi / lo, unit->x), sr);
             unit->skew = clampd(0.5 + unit->skewDepth * (unit->x - unit->prev), 0.01, 0.99);
             unit->peak = unit->amp * (1.0 - clampd(unit->ampDepth, 0.0, 1.0) * unit->x);
+            balanceGains(unit->skew, 1.0 - unit->skew, unit->balance, unit->gPos, unit->gNeg);
             if (phase >= 1.0)
                 phase = 0.0;
         }
 
         double s = unit->skew;
-        double y = phase < s ? halfCycle(unit->shape, phase / s) : -halfCycle(unit->shape, (phase - s) / (1.0 - s));
+        double y = phase < s ? unit->gPos * halfCycle(unit->shape, phase / s)
+                             : -unit->gNeg * halfCycle(unit->shape, (phase - s) / (1.0 - s));
         out[i] = zapgremlins((float)(y * unit->peak));
         phase += inc;
     }

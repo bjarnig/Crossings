@@ -55,3 +55,16 @@ static inline double mirror(double x, double lo, double hi) {
         m += 2.0 * r;
     return lo + (m > r ? 2.0 * r - m : m);
 }
+
+// Gains for the two half-cycles so they enclose equal area (no DC). Only the larger half
+// is scaled down, so peaks never exceed amp; balance blends from 0 (off) to 1 (equal area).
+static inline void balanceGains(double areaPos, double areaNeg, double balance, double& gPos, double& gNeg) {
+    gPos = gNeg = 1.0;
+    double b = clampd(balance, 0.0, 1.0);
+    if (b <= 0.0 || areaPos <= 0.0 || areaNeg <= 0.0)
+        return;
+    if (areaPos > areaNeg)
+        gPos = 1.0 - b * (1.0 - areaNeg / areaPos);
+    else
+        gNeg = 1.0 - b * (1.0 - areaPos / areaNeg);
+}

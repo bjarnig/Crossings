@@ -36,11 +36,18 @@ Position of the middle zero crossing, 0.01 to 0.99.
 argument:: interp
 Interpolation between breakpoints, 0 linear to 1 cosine. Cosine is smoother and aliases less.
 
+argument:: balance
+Scales down the larger half-cycle so both halves enclose the same area, which removes the DC offset that skew and uneven halves produce, 0 (off) to 1 (equal area). Zero crossings and the peak stay where they are; the level drops as the halves become more uneven.
+
 argument:: mul
 
 argument:: add
 
 examples::
+
+code::
+{ WsGendy.ar(40, 120, 0.05, 0.1, 6, 0.5, Dbrown(0.1, 0.9, 0.05), 0, MouseY.kr(0, 1)) ! 2 }.play;
+::
 
 code::
 { WsGendy.ar(80, 800, 0.2, 0.1) * 0.5 ! 2 }.play;
