@@ -2,9 +2,9 @@
 
 # Crossings
 
-SuperCollider server plugins (UGens) for waveset synthesis. A waveset is the span of signal between alternate zero crossings: one positive and one negative half-cycle. It is a companion to [WavesetUGens](https://github.com/bjarnig/WavesetUGens), which ports CDP's processes for cutting recorded sound into wavesets. Crossings synthesizes the wavesets themselves.
+SuperCollider server plugins (UGens) for waveset synthesis. A waveset is the span of signal between alternate zero crossings. Crossings synthesizes the wavesets themselves.
 
-Every parameter is read once per waveset, at the zero crossing. Demand-rate inputs (`Dseq`, `Dbrown`, `Dwhite`, ...) therefore advance one value per waveset, and each waveset can have its own length, shape, peak and skew. Pitch, timbre and rhythm come from the same sequence of decisions.
+Every parameter is read once per waveset, at the zero crossing. Demand-rate inputs (`Dseq`, `Dbrown`, `Dwhite`, ...) advance one value per waveset, and each waveset can have its own length, shape, peak and skew. Pitch, timbre and rhythm come from the same sequence of decisions.
 
 ## UGens
 
