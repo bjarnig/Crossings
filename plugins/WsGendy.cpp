@@ -94,7 +94,7 @@ void WsGendy_next(WsGendy* unit, int inNumSamples) {
         double it = clampd(unit->interp, 0.0, 1.0);
         double y = phase < s ? curve(unit->pos, unit->n, phase / s, it)
                              : -curve(unit->neg, unit->n, (phase - s) / (1.0 - s), it);
-        out[i] = (float)(y * unit->amp);
+        out[i] = zapgremlins((float)(y * unit->amp));
         phase += inc;
     }
 

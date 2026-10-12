@@ -87,7 +87,7 @@ void WsMap_next(WsMap* unit, int inNumSamples) {
 
         double s = unit->skew;
         double y = phase < s ? halfCycle(unit->shape, phase / s) : -halfCycle(unit->shape, (phase - s) / (1.0 - s));
-        out[i] = (float)(y * unit->peak);
+        out[i] = zapgremlins((float)(y * unit->peak));
         phase += inc;
     }
 

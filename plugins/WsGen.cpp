@@ -76,7 +76,7 @@ void WsGen_next(WsGen* unit, int inNumSamples) {
         double s = clampd(unit->pSkew + t * (unit->cSkew - unit->pSkew), 0.01, 0.99);
 
         double y = phase < s ? halfCycle(shape, phase / s) : -halfCycle(shape, (phase - s) / (1.0 - s));
-        out[i] = (float)(y * amp);
+        out[i] = zapgremlins((float)(y * amp));
         phase += incFor(freq, sr);
     }
 
