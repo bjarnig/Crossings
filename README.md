@@ -10,6 +10,8 @@ SuperCollider server plugins (UGens) that synthesize and shape sound at the leve
 - **`WsMap`**: each waveset is computed from the previous one through an iterated map (logistic, tent, sine, circle), from fixed pitch through periodic patterns to chaos.
 - **`WsGendy`**: dynamic stochastic synthesis bounded by zero crossings; breakpoints of each half-cycle random-walk once per waveset.
 
+Each also has `arTrig`, which returns `[sig, trig]` with a trigger at the start of every `every`-th waveset.
+
 ## Build from source
 
 ```sh

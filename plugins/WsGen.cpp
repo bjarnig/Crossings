@@ -6,7 +6,7 @@
 
 static InterfaceTable* ft;
 
-enum { kFreq, kAmp, kShape, kSkew, kRepeats, kGlide, kBalance };
+enum { kFreq, kAmp, kShape, kSkew, kRepeats, kGlide, kBalance, kEvery };
 
 struct WsGen : public Unit {
     double phase; // 0..1 across the current waveset
@@ -14,6 +14,7 @@ struct WsGen : public Unit {
     double pFreq, pAmp, pShape, pSkew;
     double cFreq, cAmp, cShape, cSkew;
     float glide, balance;
+    WsClock clock;
     int repLeft;
     bool started;
 };
@@ -30,6 +31,9 @@ void WsGen_Ctor(WsGen* unit) {
     unit->pSkew = unit->cSkew = 0.5;
     unit->glide = 0.f;
     unit->balance = 0.f;
+    unit->clock = WsClock();
+    if (unit->mNumOutputs > 1)
+        OUT0(1) = 0.f;
     unit->repLeft = 0;
     unit->started = false;
     OUT0(0) = 0.f;
@@ -37,12 +41,15 @@ void WsGen_Ctor(WsGen* unit) {
 
 void WsGen_next(WsGen* unit, int inNumSamples) {
     float* out = OUT(0);
+    float* trig = unit->mNumOutputs > 1 ? OUT(1) : nullptr; // only with arTrig
     double sr = SAMPLERATE;
     double phase = unit->phase;
 
     for (int i = 0; i < inNumSamples; ++i) {
+        float tr = 0.f;
         if (phase >= 1.0) {
             phase -= 1.0;
+            tr = clockTick(unit, unit->clock, kEvery, i + 1);
             unit->pFreq = unit->cFreq;
             unit->pAmp = unit->cAmp;
             unit->pShape = unit->cShape;
@@ -82,6 +89,8 @@ void WsGen_next(WsGen* unit, int inNumSamples) {
         balanceGains(s, 1.0 - s, unit->balance, gPos, gNeg);
         double y = phase < s ? gPos * halfCycle(shape, phase / s) : -gNeg * halfCycle(shape, (phase - s) / (1.0 - s));
         out[i] = zapgremlins((float)(y * amp));
+        if (trig)
+            trig[i] = tr;
         phase += incFor(freq, sr);
     }
 

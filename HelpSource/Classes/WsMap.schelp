@@ -54,11 +54,13 @@ argument:: mul
 
 argument:: add
 
-examples::
+method:: arTrig
+Same as link::#*ar:: with one more argument, and returns code::[sig, trig]::. code::trig:: is a single-sample 1 at the start of the first waveset and then of every code::every::-th waveset (repeats count), so the waveset clock can drive other UGens.
 
-code::
-{ WsMap.ar(1, 40, 4000, 0.4, 0, 0, MouseX.kr(0, 4), 0.5, balance: MouseY.kr(0, 1)) ! 2 }.play;
-::
+argument:: every
+Wavesets between triggers. Read each time the trigger fires, so a demand-rate input sets the number of wavesets until the next one.
+
+examples::
 
 code::
 { WsMap.ar(MouseX.kr(0.7, 1), 60, 1200, 0.3) ! 2 }.play;
@@ -152,4 +154,48 @@ code::
 	LeakDC.ar(RLPF.ar(src, MouseY.kr(100, 8000, 1), 0.15)) * 0.25 ! 2
 }.play;
 )
+::
+
+code::
+(
+{
+	var sig, trig;
+	#sig, trig = WsMap.arTrig(MouseX.kr(0.7, 1), 2, 20, 0);
+	Ringz.ar(trig, TExpRand.ar(300, 3000, trig), 0.1, 0.2) ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var trig = WsMap.arTrig(0.875, 3, 12, 0)[1];
+	var env = Decay2.ar(trig, 0.003, 0.15);
+	WsGen.ar(Latch.ar(TExpRand.ar(60, 400, trig), trig), env * 0.4, 1) ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var sig, trig;
+	#sig, trig = WsMap.arTrig(0.97, 50, 1200, 0.6, 0, 0, 2, 0, balance: 1, every: Dseq([16, 8, 4, 32], inf));
+	Pan2.ar(sig, TRand.ar(-0.8, 0.8, trig))
+}.play;
+)
+::
+
+code::
+(
+{
+	var sig, trig;
+	#sig, trig = WsMap.arTrig(LFNoise1.kr(0.1).range(0.85, 1), 40, 900, 0.3, 1, 0, 1.5, every: 32);
+	sig + PinkNoise.ar(Decay2.ar(trig, 0.001, 0.03) * 0.3) ! 2
+}.play;
+)
+::
+
+code::
+{ WsMap.ar(1, 40, 4000, 0.4, 0, 0, MouseX.kr(0, 4), 0.5, balance: MouseY.kr(0, 1)) ! 2 }.play;
 ::

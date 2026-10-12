@@ -68,3 +68,18 @@ static inline void balanceGains(double areaPos, double areaNeg, double balance, 
     else
         gNeg = 1.0 - b * (1.0 - areaPos / areaNeg);
 }
+
+// Counts wavesets for the trigger output: fires on the first waveset and then on every
+// `every`-th one; `every` is read only when it fires, so demand inputs step per trigger.
+struct WsClock {
+    int count = 0;
+    float every = 1.f;
+};
+
+static inline float clockTick(Unit* unit, WsClock& c, int everyIndex, int offset) {
+    if (--c.count > 0)
+        return 0.f;
+    c.every = pull(unit, everyIndex, offset, c.every);
+    c.count = c.every < 1.f ? 1 : (int)c.every;
+    return 1.f;
+}

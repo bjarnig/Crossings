@@ -5,7 +5,7 @@
 
 static InterfaceTable* ft;
 
-enum { kMinFreq, kMaxFreq, kFreqStep, kAmpStep, kKnum, kAmp, kSkew, kInterp, kBalance };
+enum { kMinFreq, kMaxFreq, kFreqStep, kAmpStep, kKnum, kAmp, kSkew, kInterp, kBalance, kEvery };
 
 static const int kMaxPts = 16;
 
@@ -13,6 +13,7 @@ struct WsGendy : public Unit {
     double phase, inc;
     double oct; // log2 of the current frequency
     float minFreq, maxFreq, freqStep, ampStep, knum, amp, skew, interp, balance;
+    WsClock clock;
     double gPos, gNeg;
     double pos[kMaxPts], neg[kMaxPts];
     int n;
@@ -53,6 +54,9 @@ void WsGendy_Ctor(WsGendy* unit) {
     unit->skew = 0.5f;
     unit->interp = 0.f;
     unit->balance = 0.f;
+    unit->clock = WsClock();
+    if (unit->mNumOutputs > 1)
+        OUT0(1) = 0.f;
     unit->gPos = unit->gNeg = 1.0;
     unit->n = 8;
     OUT0(0) = 0.f;
@@ -60,14 +64,17 @@ void WsGendy_Ctor(WsGendy* unit) {
 
 void WsGendy_next(WsGendy* unit, int inNumSamples) {
     float* out = OUT(0);
+    float* trig = unit->mNumOutputs > 1 ? OUT(1) : nullptr; // only with arTrig
     double sr = SAMPLERATE;
     double phase = unit->phase;
     double inc = unit->inc;
     RGen& rgen = *unit->mParent->mRGen;
 
     for (int i = 0; i < inNumSamples; ++i) {
+        float tr = 0.f;
         if (phase >= 1.0) {
             phase -= 1.0;
+            tr = clockTick(unit, unit->clock, kEvery, i + 1);
             unit->minFreq = pull(unit, kMinFreq, i + 1, unit->minFreq);
             unit->maxFreq = pull(unit, kMaxFreq, i + 1, unit->maxFreq);
             unit->freqStep = pull(unit, kFreqStep, i + 1, unit->freqStep);
@@ -109,6 +116,8 @@ void WsGendy_next(WsGendy* unit, int inNumSamples) {
         double y = phase < s ? unit->gPos * curve(unit->pos, unit->n, phase / s, it)
                              : -unit->gNeg * curve(unit->neg, unit->n, (phase - s) / (1.0 - s), it);
         out[i] = zapgremlins((float)(y * unit->amp));
+        if (trig)
+            trig[i] = tr;
         phase += inc;
     }
 

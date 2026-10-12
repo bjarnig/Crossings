@@ -43,11 +43,13 @@ argument:: mul
 
 argument:: add
 
-examples::
+method:: arTrig
+Same as link::#*ar:: with one more argument, and returns code::[sig, trig]::. code::trig:: is a single-sample 1 at the start of the first waveset and then of every code::every::-th waveset (repeats count), so the waveset clock can drive other UGens.
 
-code::
-{ WsGendy.ar(40, 120, 0.05, 0.1, 6, 0.5, Dbrown(0.1, 0.9, 0.05), 0, MouseY.kr(0, 1)) ! 2 }.play;
-::
+argument:: every
+Wavesets between triggers. Read each time the trigger fires, so a demand-rate input sets the number of wavesets until the next one.
+
+examples::
 
 code::
 { WsGendy.ar(80, 800, 0.2, 0.1) * 0.5 ! 2 }.play;
@@ -138,4 +140,38 @@ code::
 	WsGendy.ar(f, f * 1.5, 0.3, 0.2, TIRand.kr(2, 10, trig), amp * 0.5) ! 2
 }.play;
 )
+::
+
+code::
+(
+{
+	var sig, trig;
+	#sig, trig = WsGendy.arTrig(60, 70, 0.01, 0.05, 8, 0.3, 0.5, 1, every: Dseq([16, 24, 12], inf));
+	sig + Ringz.ar(trig, TExpRand.ar(500, 4000, trig), 0.2, 0.05) ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var sig, trig;
+	#sig, trig = WsGendy.arTrig(30, 200, 0.3, 0.15, 6, 0.4, every: 4);
+	Pan2.ar(sig, TRand.ar(-1, 1, trig))
+}.play;
+)
+::
+
+code::
+(
+{
+	var trig = WsGendy.arTrig(1, 10, 0.5, 0.2, 4, 0)[1];
+	var f = TExpRand.ar(100, 2000, trig);
+	WsGendy.ar(f, f * 1.02, 0.01, 0.1, 8, Decay2.ar(trig, 0.002, 0.3) * 0.5, 0.5, 1) ! 2
+}.play;
+)
+::
+
+code::
+{ WsGendy.ar(40, 120, 0.05, 0.1, 6, 0.5, Dbrown(0.1, 0.9, 0.05), 0, MouseY.kr(0, 1)) ! 2 }.play;
 ::

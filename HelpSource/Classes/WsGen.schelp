@@ -35,11 +35,13 @@ argument:: mul
 
 argument:: add
 
-examples::
+method:: arTrig
+Same as link::#*ar:: with one more argument, and returns code::[sig, trig]::. code::trig:: is a single-sample 1 at the start of the first waveset and then of every code::every::-th waveset (repeats count), so the waveset clock can drive other UGens.
 
-code::
-{ WsGen.ar(Dbrown(60, 300, 20), 0.4, 0, MouseX.kr(0.05, 0.95), 1, 0, MouseY.kr(0, 1)) ! 2 }.play;
-::
+argument:: every
+Wavesets between triggers. Read each time the trigger fires, so a demand-rate input sets the number of wavesets until the next one.
+
+examples::
 
 code::
 { WsGen.ar(Dbrown(80, 900, 40), 0.3) ! 2 }.play;
@@ -136,4 +138,58 @@ code::
 	WsGen.ar(freq, Decay2.kr(trig, 0.01, 0.4) * 0.4, Dwhite(0, 2), Dwhite(0.3, 0.7)) ! 2
 }.play;
 )
+::
+
+code::
+(
+{
+	var sig, trig;
+	#sig, trig = WsGen.arTrig(Dbrown(40, 200, 10), 0.3, 1, Dwhite(0.2, 0.8), Dwhite(1, 8), every: 24);
+	Pan2.ar(sig, TRand.ar(-1, 1, trig))
+}.play;
+)
+::
+
+code::
+(
+{
+	var sig, trig;
+	#sig, trig = WsGen.arTrig(Dbrown(30, 120, 5), 0.25, 0, 0.5, 1, 0, 0, Dseq([3, 5, 8, 13], inf));
+	sig + Ringz.ar(trig, Demand.ar(trig, 0, Dseq([800, 1200, 1800, 2700], inf)), 0.08, 0.1) ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var sig, trig;
+	#sig, trig = WsGen.arTrig(Dwhite(60, 400), 0.4, Dwhite(0, 3), Dwhite(0.1, 0.9), Dwhite(1, 4), 0, 1, 12);
+	LeakDC.ar(RLPF.ar(sig, Demand.ar(trig, 0, Dwhite(200, 6000)).lag(0.01), 0.3)) * 0.4 ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var trig = WsGen.arTrig(Dseq([2, 3, 4, 6], inf), 0, every: 1)[1];
+	var follow = WsGen.ar(Latch.ar(TExpRand.ar(80, 900, trig), trig), 0.3, Dwhite(0, 3), Dwhite(0.2, 0.8));
+	follow ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var sig, trig;
+	#sig, trig = WsGen.arTrig(Dseq([Dseries(30, 4, 50)], inf), 0.3, 3, 0.5, 2, every: Dwhite(4, 40));
+	sig * EnvGen.ar(Env.perc(0.002, TRand.ar(0.01, 0.2, trig)), trig) * 2 ! 2
+}.play;
+)
+::
+
+code::
+{ WsGen.ar(Dbrown(60, 300, 20), 0.4, 0, MouseX.kr(0.05, 0.95), 1, 0, MouseY.kr(0, 1)) ! 2 }.play;
 ::

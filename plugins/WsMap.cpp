@@ -6,12 +6,13 @@
 
 static InterfaceTable* ft;
 
-enum { kR, kLo, kHi, kAmp, kShape, kMap, kSkewDepth, kAmpDepth, kInit, kBalance };
+enum { kR, kLo, kHi, kAmp, kShape, kMap, kSkewDepth, kAmpDepth, kInit, kBalance, kEvery };
 
 struct WsMap : public Unit {
     double phase, inc;
     double x, prev;
     float r, lo, hi, amp, shape, map, skewDepth, ampDepth, balance;
+    WsClock clock;
     double peak, skew, gPos, gNeg;
 };
 
@@ -49,6 +50,9 @@ void WsMap_Ctor(WsMap* unit) {
     unit->skewDepth = 0.f;
     unit->ampDepth = 0.f;
     unit->balance = 0.f;
+    unit->clock = WsClock();
+    if (unit->mNumOutputs > 1)
+        OUT0(1) = 0.f;
     unit->gPos = unit->gNeg = 1.0;
     unit->peak = 0.0;
     unit->skew = 0.5;
@@ -57,13 +61,16 @@ void WsMap_Ctor(WsMap* unit) {
 
 void WsMap_next(WsMap* unit, int inNumSamples) {
     float* out = OUT(0);
+    float* trig = unit->mNumOutputs > 1 ? OUT(1) : nullptr; // only with arTrig
     double sr = SAMPLERATE;
     double phase = unit->phase;
     double inc = unit->inc;
 
     for (int i = 0; i < inNumSamples; ++i) {
+        float tr = 0.f;
         if (phase >= 1.0) {
             phase -= 1.0;
+            tr = clockTick(unit, unit->clock, kEvery, i + 1);
             unit->r = pull(unit, kR, i + 1, unit->r);
             unit->lo = pull(unit, kLo, i + 1, unit->lo);
             unit->hi = pull(unit, kHi, i + 1, unit->hi);
@@ -93,6 +100,8 @@ void WsMap_next(WsMap* unit, int inNumSamples) {
         double y = phase < s ? unit->gPos * halfCycle(unit->shape, phase / s)
                              : -unit->gNeg * halfCycle(unit->shape, (phase - s) / (1.0 - s));
         out[i] = zapgremlins((float)(y * unit->peak));
+        if (trig)
+            trig[i] = tr;
         phase += inc;
     }
 
