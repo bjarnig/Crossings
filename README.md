@@ -7,8 +7,9 @@ SuperCollider server plugins (UGens) that synthesize and shape sound at the leve
 ## UGens
 
 - **`WsGen`**: generates wavesets whose length, peak, shape and zero-crossing position are read once per waveset, so demand-rate inputs advance one value per waveset.
-- **`WsMap`**: each waveset is computed from the previous one through an iterated map (logistic, tent, sine, circle), from fixed pitch through periodic patterns to chaos.
+- **`WsMap`**: each waveset is computed from the previous one through an iterated map (logistic, tent, sine, circle, standard, Ikeda), from fixed pitch through periodic patterns to chaos, with optional hysteresis on the map parameter.
 - **`WsGendy`**: dynamic stochastic synthesis bounded by zero crossings; breakpoints of each half-cycle random-walk once per waveset.
+- **`Dmap`**: the same maps at demand rate, to drive waveset parameters, `TDuty` rhythms or `DemandEnvGen` breakpoints from one orbit, or to steer WsMap from a slower map.
 
 Each also has `arTrig`, which returns `[sig, trig]` with a trigger at the start of every `every`-th waveset.
 

@@ -1,0 +1,126 @@
+class:: Dmap
+summary:: Demand-rate iterated map
+related:: Classes/WsMap, Classes/Dbrown, Classes/Duty, Classes/TDuty, Classes/DemandEnvGen
+categories:: UGens>Demand, UGens>Generators>Chaotic
+
+description::
+Each time it is pulled, Dmap steps an iterated map once and returns its state between 0 and 1. It uses the same maps and the same values as link::Classes/WsMap::, so one orbit can set waveset lengths, rhythms in link::Classes/Duty:: and breakpoints in link::Classes/DemandEnvGen:: at once. Inside link::Classes/Dstutter:: it gives a slower map that steers a faster one.
+
+Every pull steps the map, so a single Dmap feeding two inputs of the same UGen advances twice per waveset.
+
+classmethods::
+
+method:: new
+
+argument:: r
+Map parameter, 0 to 1, scaled to each map's useful range. See link::Classes/WsMap:: for the regions of each map.
+
+argument:: map
+0 logistic, 1 tent, 2 sine, 3 circle, 4 standard, 5 Ikeda. 4 and 5 are two-dimensional.
+
+argument:: init
+Starting value of x, 0 to 1. Read when the synth starts and on reset.
+
+argument:: axis
+0 returns x. 1 returns the second stream mapped to 0 to 1: y for the two-dimensional maps, the change in x for the others. Two Dmaps with the same arguments and different axes stay on the same orbit as long as their inputs are deterministic.
+
+argument:: hyst
+Half-width of a dead band on code::r::. The effective r only moves when code::r:: pushes past it, so sweeping up and back down leaves the map in different places.
+
+argument:: length
+Number of values before the stream ends.
+
+examples::
+
+code::
+{ WsGen.ar(Dmap(0.97) * 800 + 60, 0.3) ! 2 }.play;
+::
+
+code::
+{ WsGen.ar(60 * (20 ** Dmap(MouseX.kr(0.7, 1))), 0.3, 1) ! 2 }.play;
+::
+
+code::
+(
+{
+	var trig = TDuty.ar(Dmap(0.875) * 0.2 + 0.04);
+	Ringz.ar(trig, 1200, 0.08, 0.3) ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var trig = TDuty.ar(Dmap(MouseX.kr(0.7, 1), 0, 0.3) * 0.25 + 0.03);
+	var freq = Demand.ar(trig, 0, 80 * (16 ** Dmap(0.97, 2)));
+	WsGen.ar(freq, Decay2.ar(trig, 0.002, 0.2).clip(0, 1) * 0.4, 1) ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var env = DemandEnvGen.ar(Dmap(0.97, 0) * 2 - 1, Dmap(0.9, 2) * 0.004 + 0.0005, 1);
+	LeakDC.ar(env) * 0.3 ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var freq = 50 * (30 ** Dmap(0.3, 4, 0.3, 0));
+	var skew = Dmap(0.3, 4, 0.3, 1) * 0.8 + 0.1;
+	WsGen.ar(freq, 0.3, 0, skew) ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var r = Dstutter(64, Dmap(0.95, 2) * 0.3 + 0.7);
+	WsMap.ar(r, 50, 1600, 0.3, 0, 0, 2) ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var r = Dstutter(Dwhite(8, 200), Dmap(0.9, 3) * 0.4 + 0.6);
+	WsMap.ar(r, 40, 2000, 0.3, Dmap(0.8, 4) * 3, Dstutter(500, Dseq([0, 4, 5], inf)), 2, 0.5, balance: 1) ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var r = LFTri.kr(0.05).range(0.6, 1);
+	WsGen.ar(60 * (25 ** Dmap(r, 0, 0.3, 0, MouseX.kr(0, 0.2))), 0.3) ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	Splay.ar(Array.fill(4, { |i|
+		WsGen.ar(100 * (i + 1) * (4 ** Dmap(0.9 + (i * 0.025), 5)), 0.2, i, Dmap(0.9 + (i * 0.025), 5, 0.3, 1) * 0.8 + 0.1, balance: 1)
+	}))
+}.play;
+)
+::
+
+code::
+(
+{
+	var gate = Duty.ar(Dstutter(4, Dmap(0.96) * 0.15 + 0.02), 0, Dmap(0.96, 1) > 0.5);
+	var sig = WsGendy.ar(60, 90, 0.02, 0.05, 6, 0.4, 0.5, 1);
+	sig * Lag.ar(gate, 0.005) ! 2
+}.play;
+)
+::

@@ -1,10 +1,10 @@
 class:: WsMap
 summary:: Wavesets computed from the previous waveset through an iterated map
-related:: Classes/WsGen, Classes/WsGendy
+related:: Classes/WsGen, Classes/WsGendy, Classes/Dmap
 categories:: UGens>Generators>Chaotic
 
 description::
-Each waveset is computed from the one before it. A state x between 0 and 1 is stepped once per waveset through a nonlinear map. x sets the waveset length on an exponential scale between code::lo:: and code::hi::, the change in x since the last waveset sets the skew, and x can scale the peak. Fixed points give a steady pitch, periodic orbits give repeating patterns of waveset lengths, and chaotic orbits give noisy, rough streams.
+Each waveset is computed from the one before it. A state x between 0 and 1 is stepped once per waveset through a nonlinear map. x sets the waveset length on an exponential scale between code::lo:: and code::hi::, a second stream sets the skew, and x can scale the peak. For the two-dimensional maps the second stream is the map's own y; for the others it is the change in x since the last waveset. Fixed points give a steady pitch, periodic orbits give repeating patterns of waveset lengths, and chaotic orbits give noisy, rough streams.
 
 All inputs except code::init:: are read once per waveset, so demand-rate inputs advance one value per waveset.
 
@@ -23,6 +23,12 @@ For the sine map: like the logistic map, slightly earlier: period 2 from about 0
 
 For the circle map: short locked periods alternate with irregular stretches as r rises, and above about 0.6 it is mostly irregular.
 
+For the standard map: quasi-periodic drift below about 0.4, islands and chaos alternating up to about 0.65, chaotic above 0.7.
+
+For the Ikeda map: a fixed point below about 0.45, period 2 from 0.45, period 4 near 0.7, chaos from about 0.75.
+
+See also link::Classes/Dmap::, which steps the same maps at demand rate.
+
 argument:: lo
 Waveset frequency in Hz when x is 0.
 
@@ -36,10 +42,10 @@ argument:: shape
 Half-cycle shape: 0 sine, 1 triangle, 2 square, 3 spike. Fractional values morph between neighbours.
 
 argument:: map
-0 logistic, 1 tent, 2 sine, 3 circle.
+0 logistic, 1 tent, 2 sine, 3 circle, 4 standard, 5 Ikeda. 4 and 5 are two-dimensional.
 
 argument:: skewDepth
-How strongly the change in x moves the middle zero crossing. 0 keeps the half-cycles equal.
+How strongly the second stream moves the middle zero crossing. 0 keeps the half-cycles equal.
 
 argument:: ampDepth
 How strongly x lowers the peak, 0 to 1. At 1 the shortest wavesets are the quietest.
@@ -49,6 +55,9 @@ Starting value of x, 0 to 1. Read once when the synth starts.
 
 argument:: balance
 Scales down the larger half-cycle so both halves enclose the same area, which removes the DC offset that skew and uneven halves produce, 0 (off) to 1 (equal area). Zero crossings and the peak stay where they are; the level drops as the halves become more uneven.
+
+argument:: hyst
+Half-width of a dead band on code::r::. The effective r only moves when code::r:: pushes past it, so sweeping up and back down leaves the map in different places, and small fluctuations of code::r:: are ignored.
 
 argument:: mul
 
@@ -198,4 +207,51 @@ code::
 
 code::
 { WsMap.ar(1, 40, 4000, 0.4, 0, 0, MouseX.kr(0, 4), 0.5, balance: MouseY.kr(0, 1)) ! 2 }.play;
+::
+
+code::
+{ WsMap.ar(MouseX.kr(0, 0.4), 60, 900, 0.3, 0, 4, 2) ! 2 }.play;
+::
+
+code::
+{ WsMap.ar(MouseX.kr(0.4, 1), 40, 1600, 0.3, 1, 4, MouseY.kr(0, 4), balance: 1) ! 2 }.play;
+::
+
+code::
+{ WsMap.ar(MouseX.kr(0.3, 1), 50, 1000, 0.3, 0, 5, 2, balance: 1) ! 2 }.play;
+::
+
+code::
+{ WsMap.ar(0.85, 30, 3000, 0.3, Dmap(0.85, 5, 0.3, 1) * 3, 5, 3, 0.6, balance: 1) ! 2 }.play;
+::
+
+code::
+(
+{
+	var r = LFTri.kr(0.03).range(0.6, 1);
+	[WsMap.ar(r, 60, 1200, 0.3), WsMap.ar(r, 60, 1200, 0.3, hyst: 0.08)]
+}.play;
+)
+::
+
+code::
+{ WsMap.ar(LFNoise1.kr(0.2).range(0.7, 1), 60, 1200, 0.3, 0, 5, 2, hyst: MouseX.kr(0, 0.15), balance: 1) ! 2 }.play;
+::
+
+code::
+(
+{
+	var r = Dstutter(32, Dmap(0.97, 0) * 0.35 + 0.65);
+	WsMap.ar(r, 40, 1600, 0.3, 0, 0, 2, 0.4, balance: 1) ! 2
+}.play;
+)
+::
+
+code::
+(
+{
+	var map = Dstutter(Dwhite(100, 800), Dmap(0.9, 3) * 5.99);
+	WsMap.ar(Dstutter(16, Dmap(0.8, 4) * 0.4 + 0.6), 40, 2400, 0.3, Dbrown(0, 3, 0.1), map, 2, 0.5, balance: 1, hyst: 0.05) ! 2
+}.play;
+)
 ::
