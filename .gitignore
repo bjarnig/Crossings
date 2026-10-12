@@ -10,3 +10,6 @@ install/
 *~
 .vscode/
 .idea/
+
+# Local Claude instructions
+CLAUDE.md
