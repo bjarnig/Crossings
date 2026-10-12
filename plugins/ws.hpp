@@ -4,6 +4,7 @@
 #include "SC_PlugIn.h"
 #include "SC_DemandUnit.h"
 #include <cmath>
+#include <utility>
 
 static const double kPi = 3.141592653589793; // portable (MSVC lacks M_PI)
 

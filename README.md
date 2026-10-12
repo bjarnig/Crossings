@@ -18,6 +18,10 @@ Every parameter is read once per waveset, at the zero crossing. Demand-rate inpu
 - **`arTrig`** returns `[sig, trig]`, with a trigger at the start of every `every`-th waveset, so the waveset clock can drive other UGens.
 - **`balance`** scales the larger half-cycle so both halves enclose the same area, removing the DC offset that skewed wavesets produce.
 
+## Install (prebuilt)
+
+Download the archive for your OS from [Releases](https://github.com/bjarnig/Crossings/releases), extract the `Crossings/` folder into your SuperCollider Extensions folder, then recompile the class library (Cmd/Ctrl-Shift-L) and reboot the server. Binaries target SuperCollider 3.12 to 3.14.x (plugin API v3). On macOS, clear the download quarantine: `xattr -dr com.apple.quarantine <extracted Crossings folder>`.
+
 ## Build from source
 
 ```sh

@@ -1,0 +1,78 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build ${{ matrix.label }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-latest,   label: macOS }
+          - { os: ubuntu-latest,  label: Linux }
+          - { os: windows-latest, label: Windows }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch SuperCollider source (3.14.1, plugin API v3)
+        run: git clone --depth 1 --branch Version-3.14.1 https://github.com/supercollider/supercollider.git sc-src
+
+      - name: Configure
+        run: cmake -S . -B build -DSC_PATH=sc-src -DCMAKE_BUILD_TYPE=Release -DSUPERNOVA=OFF
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Install
+        run: cmake --install build --config Release --prefix install
+
+      - name: Package
+        working-directory: install
+        run: cmake -E tar cf ../Crossings-${{ matrix.label }}.zip --format=zip Crossings
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Crossings-${{ matrix.label }}
+          path: Crossings-${{ matrix.label }}.zip
+
+  release:
+    name: Publish release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Publish
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/**/*.zip
+          fail_on_unmatched_files: true
+          body: |
+            **Crossings**: waveset synthesis UGens for SuperCollider.
+
+            Prebuilt server plugins: `WsGen`, `WsMap`, `WsGendy`, `Dmap`.
+
+            ### Compatibility
+            Built against SuperCollider **3.14.1** (plugin API **v3**), so it loads in SuperCollider **3.12 to 3.14.x**. It does not load in 3.15/develop builds (API v6). Each archive is platform-specific.
+
+            ### Install
+            Extract the archive for your OS into your SuperCollider **Extensions** folder, then recompile the class library (Cmd/Ctrl-Shift-L) and reboot the server.
+            - macOS: `~/Library/Application Support/SuperCollider/Extensions/`
+            - Linux: `~/.local/share/SuperCollider/Extensions/`
+            - Windows: `%LOCALAPPDATA%\SuperCollider\Extensions\`
+
+            **macOS:** the plugins are unsigned, so clear the download quarantine after extracting:
+            ```
+            xattr -dr com.apple.quarantine ~/Library/Application\ Support/SuperCollider/Extensions/Crossings
+            ```
