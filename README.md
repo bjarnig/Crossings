@@ -4,7 +4,7 @@
 
 SuperCollider server plugins (UGens) for waveset synthesis. A waveset is the span of signal between alternate zero crossings. Crossings synthesizes the wavesets themselves.
 
-Every parameter is read once per waveset, at the zero crossing. Demand-rate inputs (`Dseq`, `Dbrown`, `Dwhite`, ...) advance one value per waveset, and each waveset can have its own length, shape, peak and skew. Pitch, timbre and rhythm come from the same sequence of decisions.
+Every parameter is read once per waveset, at the zero crossing. Demand-rate inputs (`Dseq`, `Dbrown`, `Dwhite`, ...) advance one value per waveset, and each waveset can have its own length, shape, peak and skew.
 
 ## UGens
 
@@ -24,20 +24,6 @@ The generators share two extras:
 ## Install (prebuilt)
 
 Download the archive for your OS from [Releases](https://github.com/bjarnig/Crossings/releases), extract the `Crossings/` folder into your SuperCollider Extensions folder, then recompile the class library (Cmd/Ctrl-Shift-L) and reboot the server. Binaries target SuperCollider 3.12 to 3.14.x (plugin API v3). On macOS, clear the download quarantine: `xattr -dr com.apple.quarantine <extracted Crossings folder>`.
-
-## Build from source
-
-```sh
-./build.sh [path-to-supercollider-source]
-```
-
-Builds and installs into your user Extensions folder (`.../SuperCollider/Extensions/Crossings/`). Then recompile the class library (Cmd-Shift-L) and boot the server.
-
-```supercollider
-{ WsMap.ar(MouseX.kr(0.7, 1), 60, 1200, 0.3) ! 2 }.play;
-```
-
-Requires CMake 3.12 or later and a C++17 compiler. Builds against a SuperCollider source checkout matching the scsynth you run (plugin API v3 for SuperCollider 3.12 to 3.14).
 
 ## Credits & license
 
