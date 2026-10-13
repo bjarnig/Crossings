@@ -1,4 +1,4 @@
-![Crossings](docs/banner.png)
+![Crossings](docs/banner.svg)
 
 # Crossings
 
