@@ -13,6 +13,8 @@ Every parameter is read once per waveset, at the zero crossing. Demand-rate inpu
 - **`WsGendy`**: Xenakis' dynamic stochastic synthesis bounded by zero crossings. The breakpoints of each half-cycle random-walk once per waveset.
 - **`Dmap`**: the WsMap maps at demand rate, so one orbit can drive waveset parameters, `TDuty` rhythms or `DemandEnvGen` breakpoints, or a slower map can steer WsMap.
 - **`WsGroup`**: groups of any number of half-cycles in place of wavesets of two. Odd counts, uneven lengths, decay and random sign flips give subharmonic and inharmonic results.
+- **`WsNest`**: wavesets made of wavesets. Each half holds smaller wavesets, down to several levels, with proportions from the map's orbit continued at every scale. A parent's sign change can remove a zero crossing between its children.
+- **`WsHear`**: WsMap with an input. Each heard waveset is read back as a map state and mixed into the orbit, so a filter, delay or room in a feedback loop bends the map.
 - **`WsSync`**: synthetic wavesets on the zero crossings of a live input, keeping its timing exactly, one waveset late, with optional skew and amplitude from the input.
 - **`WsInfo`**: measures each waveset of a live input as it ends: frequency, peak, skew and a trigger.
 

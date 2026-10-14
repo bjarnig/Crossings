@@ -1,0 +1,119 @@
+class:: WsNest
+summary:: Wavesets made of wavesets, nested through an iterated map
+related:: Classes/WsMap, Classes/WsGroup, Classes/Dmap
+categories:: UGens>Generators>Chaotic
+
+description::
+Each half of a waveset is filled with code::branch:: smaller wavesets, and each half of those is filled again, down to code::depth:: levels. Only the bottom level is drawn as half-cycles; every level above it lends its sign, and optionally its contour, to everything inside it.
+
+The proportions come from an iterated map, as in link::Classes/WsMap::. The top-level state steps once per top-level waveset and sets its length. The children of any waveset are the next steps of the orbit from that waveset's own state, so the same rule divides time at every level. A fixed point divides every level evenly, a periodic orbit repeats the same proportions at every scale, and a chaotic orbit gives a structure that is self-similar only in its statistics.
+
+Signs multiply down the tree. Where a parent changes sign, the last half-cycle of one child and the first of the next have the same sign, and the zero crossing between them disappears. Which crossings exist depends on the level they are seen from.
+
+The tree has code::2 * (2 * branch)^depth:: half-cycles, at most 4096. code::depth:: is lowered until the tree fits, and further until its shortest half-cycle is at least 4 samples long, so the bottom level cannot alias. A fast top level therefore holds fewer levels. The bottom wavesets are roughly code::(2 * branch)^depth:: times faster than the top, so code::lo:: and code::hi:: are usually low: a few Hz gives audio-rate grains at depth 2 or 3. With code::depth:: 0 it behaves like WsMap without hysteresis.
+
+All inputs except code::init:: are read once per top-level waveset.
+
+classmethods::
+
+method:: ar
+
+argument:: r
+Map parameter, 0 to 1, as in link::Classes/WsMap::. Higher values move towards chaos.
+
+argument:: lo
+Top-level waveset frequency in Hz when x is 0.
+
+argument:: hi
+Top-level waveset frequency in Hz when x is 1.
+
+argument:: amp
+Peak amplitude.
+
+argument:: shape
+Half-cycle shape of the bottom level: 0 sine, 1 triangle, 2 square, 3 spike. Fractional values morph between neighbours. code::contour:: uses the same shape for the levels above.
+
+argument:: map
+0 logistic, 1 tent, 2 sine, 3 circle, 4 standard, 5 Ikeda.
+
+argument:: depth
+Levels of nesting below the top-level waveset, 0 to 11.
+
+argument:: branch
+Wavesets in each half of a parent, 1 to 8. With 1 every half holds a single waveset, so each level doubles the frequency and multiplies a new sign pattern onto the last.
+
+argument:: spread
+Range of the child lengths in octaves. A child with state x gets a length proportional to code::2^(spread * (1 - 2x))::, so at 1 the longest child can be four times the shortest. 0 divides every half evenly whatever the map does.
+
+argument:: contour
+How much each parent's half-cycle shape scales the children inside it, 0 to 1. At 0 the bottom half-cycles all have the same peak; at 1 every level draws its shape as an envelope over the level below.
+
+argument:: skewDepth
+How strongly the map's second stream moves the middle zero crossing of each waveset, at every level.
+
+argument:: init
+Starting value of x, 0 to 1. Read once when the synth starts.
+
+argument:: balance
+Scales down the larger side so the positive and negative half-cycles of the whole tree enclose the same area, 0 (off) to 1 (equal area).
+
+argument:: mul
+
+argument:: add
+
+method:: arTrig
+Same as link::#*ar:: with one more argument, and returns code::[sig, trig]::. code::trig:: is a single-sample 1 at the start of the first top-level waveset and then of every code::every::-th one.
+
+argument:: every
+Top-level wavesets between triggers. Read each time the trigger fires.
+
+examples::
+
+code::
+// a fixed point: even division at every level, sign changes only
+{ WsNest.ar(0.5, 3, 30, 0.3, 0, 0, MouseX.kr(0, 4).round, 3) ! 2 }.play;
+::
+
+code::
+// period 2: the same uneven proportions at every scale
+{ WsNest.ar(0.8, 2, 20, 0.3, 0, 0, 3, 2, MouseX.kr(0, 3)) ! 2 }.play;
+::
+
+code::
+// chaos: self-similar in its statistics only
+{ WsNest.ar(MouseX.kr(0.85, 1), 1, 12, 0.3, 0, 0, 3, 3, 1, MouseY.kr(0, 1)) ! 2 }.play;
+::
+
+code::
+// branch 1: each level doubles the frequency and multiplies its sign pattern
+{ WsNest.ar(0.97, 20, 200, 0.3, 0, 1, MouseX.kr(0, 6).round, 1, 1.5, 0.3, balance: 1) ! 2 }.play;
+::
+
+code::
+// contour turns the upper levels into envelopes, so they become rhythm
+{ WsNest.ar(0.95, 0.5, 4, 0.4, MouseY.kr(0, 3), 0, 2, 4, 1.5, MouseX.kr(0, 1), balance: 1) ! 2 }.play;
+::
+
+code::
+// standard map: the second stream skews every level
+{ WsNest.ar(MouseX.kr(0.3, 1), 2, 15, 0.3, 1, 4, 3, 2, 1, 0.4, MouseY.kr(0, 0.45), balance: 1) ! 2 }.play;
+::
+
+code::
+(
+{
+	var sig, trig;
+	#sig, trig = WsNest.arTrig(0.96, 1, 6, 0.3, 0, 2, 2, Dseq([2, 3, 5], inf), 1.2, 0.5, balance: 1);
+	Pan2.ar(sig, TRand.ar(-0.7, 0.7, trig))
+}.play;
+)
+::
+
+code::
+(
+{
+	var r = Dstutter(8, Dmap(0.9, 3) * 0.3 + 0.7);
+	WsNest.ar(r, 0.5, 8, 0.3, Dbrown(0, 2, 0.2), 0, Dseq([1, 2, 3, 2], inf), 3, 1, 0.6, 0.2, balance: 1) ! 2
+}.play;
+)
+::

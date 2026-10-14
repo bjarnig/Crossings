@@ -78,7 +78,7 @@ message(STATUS "Install directory set to: ${CMAKE_INSTALL_PREFIX}")
 #      sets include dirs + compiler flags, installs .scx/.sc/.schelp under <prefix>/<dest_dir>.
 
 
-foreach(ugen WsGen WsMap WsGendy Dmap WsInfo WsSync WsGroup)
+foreach(ugen WsGen WsMap WsGendy Dmap WsInfo WsSync WsGroup WsNest WsHear)
     sc_add_server_plugin(
         "Crossings"                                  # destination dir under install prefix
         "${ugen}"                                    # target base name

@@ -1,0 +1,146 @@
+class:: WsHear
+summary:: WsMap whose orbit is bent by the wavesets it hears
+related:: Classes/WsMap, Classes/WsInfo, Classes/WsSync
+categories:: UGens>Generators>Chaotic
+
+description::
+link::Classes/WsMap:: with an input. Each waveset of the input is measured as it ends, and its length is read back as a map state on the same code::lo:: to code::hi:: scale that WsMap uses to turn x into a length. When the next waveset is generated, code::couple:: mixes that heard state into x before the map steps:
+
+code::x = x + couple * (heard - x)::
+
+Each heard waveset is used once. When nothing new has been heard, as with a silent or slow input, the map steps on its own and WsHear is exactly WsMap.
+
+The usual input is WsHear's own output after it has passed through something: a filter, a delay, a room through a microphone, another UGen. Anything that moves zero crossings on the way back moves the orbit. A linear filter keeps the period of a periodic signal, so a stable fixed point hears itself unchanged and stays put. Periodic and chaotic orbits are different: a filter smears each waveset into the next, and a delay returns an older state, so a period 2 orbit can collapse onto one length, turn chaotic, or be tamed by a resonance. Closed through link::Classes/LocalIn::, the loop is one block late, so the map hears its own past.
+
+Input wavesets are found the way link::Classes/WsInfo:: finds them: at rising zero crossings, once the signal has gone below code::-thresh::.
+
+classmethods::
+
+method:: ar
+
+argument:: in
+Audio input to listen to.
+
+argument:: r
+Map parameter, 0 to 1, as in link::Classes/WsMap::.
+
+argument:: lo
+Waveset frequency in Hz when x is 0. Heard frequencies below code::lo:: read as 0.
+
+argument:: hi
+Waveset frequency in Hz when x is 1. Heard frequencies above code::hi:: read as 1.
+
+argument:: amp
+Peak amplitude.
+
+argument:: shape
+Half-cycle shape: 0 sine, 1 triangle, 2 square, 3 spike.
+
+argument:: map
+0 logistic, 1 tent, 2 sine, 3 circle, 4 standard, 5 Ikeda.
+
+argument:: couple
+How much of the heard state replaces x before each step, 0 to 1. 0 is WsMap; 1 hands the orbit over entirely to what comes back.
+
+argument:: thresh
+Hysteresis of the input detector. The input must fall below code::-thresh:: between two rising crossings, so noise around zero does not split wavesets. Read at control rate.
+
+argument:: skewDepth
+How strongly the map's second stream moves the middle zero crossing.
+
+argument:: ampDepth
+How strongly x lowers the peak, 0 to 1.
+
+argument:: init
+Starting value of x, 0 to 1. Read once when the synth starts.
+
+argument:: balance
+Scales down the larger half-cycle so both halves enclose the same area, 0 (off) to 1 (equal area).
+
+argument:: hyst
+Half-width of a dead band on code::r::, as in link::Classes/WsMap::.
+
+argument:: mul
+
+argument:: add
+
+method:: arTrig
+Same as link::#*ar:: with one more argument, and returns code::[sig, trig]::.
+
+argument:: every
+Wavesets between triggers. Read each time the trigger fires.
+
+examples::
+
+code::
+// a lowpass in the loop: at couple 0.5 it pulls the period 2 orbit onto one length
+(
+{
+	var fb = LocalIn.ar(1);
+	var sig = WsHear.ar(LPF.ar(fb, MouseY.kr(100, 4000, 1)), 0.8, 60, 1200, 0.3, couple: MouseX.kr(0, 1), thresh: 0.001);
+	LocalOut.ar(sig);
+	sig ! 2
+}.play;
+)
+::
+
+code::
+// a resonator in the loop: the orbit is pulled towards its frequency and thrown out again
+(
+{
+	var fb = LocalIn.ar(1);
+	var sig = WsHear.ar(Ringz.ar(fb, MouseY.kr(80, 800, 1), 0.05) * 0.1, 0.9, 50, 1000, 0.3, 0, 0, MouseX.kr(0, 1), 0.001, balance: 1);
+	LocalOut.ar(sig);
+	sig ! 2
+}.play;
+)
+::
+
+code::
+// a delay in the loop: the map hears itself a fraction of a second ago
+(
+{
+	var fb = LocalIn.ar(1);
+	var sig = WsHear.ar(DelayC.ar(fb, 0.5, MouseY.kr(0.001, 0.5, 1)), 0.6, 40, 1600, 0.3, 0, 2, MouseX.kr(0, 1), skewDepth: 2, balance: 1);
+	LocalOut.ar(sig);
+	sig ! 2
+}.play;
+)
+::
+
+code::
+// two maps that hear each other
+(
+{
+	var fb = LocalIn.ar(2);
+	var a = WsHear.ar(fb[1], 0.75, 50, 900, 0.3, 0, 0, MouseX.kr(0, 1), skewDepth: 1, balance: 1);
+	var b = WsHear.ar(fb[0], 0.6, 70, 1400, 0.3, 1, 3, MouseY.kr(0, 1), skewDepth: 1, balance: 1);
+	LocalOut.ar([a, b]);
+	[a, b]
+}.play;
+)
+::
+
+code::
+b = Buffer.read(s, Platform.resourceDir +/+ "sounds/a11wlk01.wav");
+::
+
+code::
+// listening to a recording instead of itself
+(
+{
+	var v = PlayBuf.ar(1, b, BufRateScale.kr(b), loop: 1);
+	WsHear.ar(v, 0.95, 40, 800, 0.3, 1, 0, MouseX.kr(0, 1), 0.02, 1, balance: 1) ! 2
+}.play;
+)
+::
+
+code::
+// microphone in the loop: the room becomes part of the map (speakers at low volume, no headphones)
+(
+{
+	var sig = WsHear.ar(SoundIn.ar(0), 0.8, 60, 1200, 0.2, 0, 3, MouseX.kr(0, 1), 0.02, balance: 1);
+	sig ! 2
+}.play;
+)
+::
